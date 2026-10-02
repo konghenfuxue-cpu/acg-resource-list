@@ -23,6 +23,20 @@
     .filters { display:flex; gap:7px; overflow-x:auto; padding:0 0 17px; }
     .filter { flex:none; padding:8px 14px; color:#d2d3d7; background:#393b3d; border:1px solid #595b5e; border-radius:7px; font-size:13px; }
     .filter.active { color:#2b2c2e; background:var(--pink); border-color:var(--pink); }
+    select { font:inherit; color:var(--ink); background:var(--card); border:1px solid #606266; border-radius:7px; padding:9px; max-width:100%; }
+    .browse-options { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding-bottom:13px; font-size:13px; }
+    .browse-options label { display:flex; align-items:center; gap:7px; }
+    .hide-panel { margin-bottom:16px; border:1px solid var(--line); border-radius:9px; padding:12px 14px; font-size:13px; }
+    .hide-panel summary { cursor:pointer; color:var(--pink); }
+    .hide-panel p,.filter-status { color:var(--muted); font-size:12px; line-height:1.6; }
+    .hide-panel fieldset { border:0; padding:12px 0; margin:0; }
+    .hide-panel legend { padding-top:12px; }
+    .hide-choices { display:flex; flex-wrap:wrap; gap:10px 17px; }
+    .hide-choices label { display:flex; align-items:center; gap:6px; }
+    .hide-choices input { accent-color:var(--pink); width:17px; height:17px; }
+    .filter-status { margin:0 0 15px; }
+    .filter-status button { margin-left:8px; border:0; background:transparent; color:var(--pink); text-decoration:underline; }
+    button:focus-visible,summary:focus-visible,select:focus-visible { outline:2px solid var(--pink); outline-offset:3px; }
     .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; min-height:290px; }
     .flip-card { height:292px; perspective:900px; }
     .flip-inner { position:relative; width:100%; height:100%; transition:transform .5s ease; transform-style:preserve-3d; }
@@ -82,6 +96,9 @@
     <main>
       <div class="toolbar"><input id="search" class="search" type="search" placeholder="搜索作品、分类或网盘" aria-label="搜索资源"><span id="count" class="count"></span></div>
       <div id="filters" class="filters" aria-label="资源分类"></div>
+      <div class="browse-options"><label>排序<select id="sort"><option value="latest">最新更新</option><option value="name">名称排序</option></select></label><label>时间标签<select id="tag-filter"><option value="">全部时间</option></select></label></div>
+      <details class="hide-panel"><summary id="hide-summary">隐藏内容</summary><p>勾选后隐藏对应分类或标签，搜索时也不会显示。偏好保存在当前浏览器。</p><fieldset><legend>隐藏分类</legend><div id="hide-types" class="hide-choices"></div></fieldset><fieldset><legend>隐藏标签</legend><div id="hide-tags" class="hide-choices"></div></fieldset><button id="reset-hidden" class="filter" type="button">恢复全部内容</button><p id="preference-note" role="status"></p></details>
+      <p id="filter-status" class="filter-status" role="status" aria-live="polite"></p>
       <div id="grid" class="grid"><div id="empty" class="empty">没有找到相关资源，换个关键词试试。</div></div>
       <button id="more" class="more" type="button" hidden>继续查看</button>
       <section class="community" aria-label="反馈与求资源"><strong>反馈失效链接 · 求资源</strong><a href="https://qm.qq.com/q/DGrDnHsOu4" target="_blank" rel="noopener noreferrer">加入 QQ 群</a><button id="copy-group" type="button">复制群号 1078525753</button><p class="feedback-tip">QQ 群“负雪的资源分享群组”。手机无法直接打开加群链接时，可复制群号在 QQ 中搜索；具体链接可在卡片背面点“反馈”。</p></section>
@@ -122,6 +139,59 @@
       return [...groups.values()].sort((a,b) => a.title.localeCompare(b.title,'zh-CN'));
     }
     const groups = groupRecords(records);
+    // FILTER_LOGIC_START
+    function latestDate(group) {
+      return group.entries.reduce((latest,item) => /^\d{4}-\d{2}-\d{2}$/.test(item.updated_at || '') && item.updated_at>latest ? item.updated_at : latest,'');
+    }
+    function parsePreferences(raw) {
+      let value;
+      try { value=JSON.parse(raw) || {}; } catch (_) { value={}; }
+      const strings = list => Array.isArray(list) ? [...new Set(list.filter(item=>typeof item==='string'))] : [];
+      return {hiddenTypes:strings(value.hiddenTypes),hiddenTags:strings(value.hiddenTags),sort:value.sort==='name' ? 'name' : 'latest'};
+    }
+    function selectGroups(source,state) {
+      const query=state.query.trim().toLocaleLowerCase();
+      return source.filter(group => !state.hiddenTypes.includes(group.type) && !group.tags.some(tag=>state.hiddenTags.includes(tag)) &&
+        (state.category==='全部' || group.type===state.category) && (!state.tag || group.tags.includes(state.tag)) &&
+        [group.title,group.type,group.summary,...group.tags,...group.entries.map(item=>{
+          try { return ({'pan.quark.cn':'夸克网盘','pan.baidu.com':'百度网盘','pan.xunlei.com':'迅雷网盘'})[new URL(item.url).hostname] || '其他链接'; } catch (_) { return ''; }
+        })].join(' ').toLocaleLowerCase().includes(query))
+        .sort((a,b)=>(state.sort==='latest' ? latestDate(b).localeCompare(latestDate(a)) : 0) || a.title.localeCompare(b.title,'zh-CN'));
+    }
+    // FILTER_LOGIC_END
+    const preferenceKey='resource-catalog-preferences-v1';
+    let preferences;
+    try { preferences=parsePreferences(localStorage.getItem(preferenceKey)); } catch (_) { preferences=parsePreferences(null); }
+    const allTags=[...new Set(groups.flatMap(group=>group.tags))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
+    const timeTags=allTags.filter(tag=>/^20\d{2}(?:年)?(?:[一二三四五六七八九十]{1,3}|\d{1,2})月新番$/.test(tag));
+    preferences.hiddenTypes=preferences.hiddenTypes.filter(type=>groups.some(group=>group.type===type));
+    preferences.hiddenTags=preferences.hiddenTags.filter(tag=>allTags.includes(tag));
+    const sortSelect=document.getElementById('sort');
+    const tagSelect=document.getElementById('tag-filter');
+    sortSelect.value=preferences.sort;
+    timeTags.forEach(tag=>{ const option=document.createElement('option'); option.value=tag; option.textContent=tag; tagSelect.append(option); });
+    if (!timeTags.length) { const option=document.createElement('option'); option.disabled=true; option.textContent='暂无时间标签'; tagSelect.append(option); }
+    function savePreferences() {
+      try { localStorage.setItem(preferenceKey,JSON.stringify(preferences)); document.getElementById('preference-note').textContent='已保存到当前浏览器。'; }
+      catch (_) { document.getElementById('preference-note').textContent='当前浏览器无法保存偏好，本次浏览仍然有效。'; }
+    }
+    function makeHideChoices(container,values,key) {
+      values.forEach(value=>{
+        const label=document.createElement('label'); const input=document.createElement('input'); input.type='checkbox'; input.checked=preferences[key].includes(value);
+        input.addEventListener('change',()=>{ preferences[key]=input.checked ? [...preferences[key],value] : preferences[key].filter(item=>item!==value); savePreferences(); shown=40; render(); });
+        label.append(input,document.createTextNode(value)); container.append(label);
+      });
+    }
+    makeHideChoices(document.getElementById('hide-types'),['动漫','漫画','小说','游戏','其他'].filter(type=>groups.some(group=>group.type===type)),'hiddenTypes');
+    makeHideChoices(document.getElementById('hide-tags'),allTags,'hiddenTags');
+    if (!allTags.length) document.getElementById('hide-tags').textContent='暂无标签，维护表填写后会自动出现。';
+    document.getElementById('reset-hidden').addEventListener('click',()=>{
+      preferences.hiddenTypes=[]; preferences.hiddenTags=[];
+      document.querySelectorAll('.hide-choices input').forEach(input=>{input.checked=false;});
+      selected='全部'; tagSelect.value=''; savePreferences(); shown=40; render();
+    });
+    sortSelect.addEventListener('change',()=>{preferences.sort=sortSelect.value;savePreferences();shown=40;render();});
+    tagSelect.addEventListener('change',()=>{shown=40;render();});
     const grid = document.getElementById('grid');
     const empty = document.getElementById('empty');
     const filters = document.getElementById('filters');
@@ -175,6 +245,8 @@
       front.append(head);
       const title=el('h2',info.title.length>24 ? 'long-title' : '',info.title); title.title=group.title; front.append(title);
       if (info.meta) front.append(el('p','meta',info.meta));
+      const updated=latestDate(group);
+      if (updated) front.append(el('p','meta',`更新于 ${updated}`));
       front.append(el('p','note',group.summary || info.teaser || `共 ${group.entries.length} 个分享入口`));
       if (group.title.startsWith('未命名资源')) front.append(el('span','warning','标题待补充'));
       const chips=el('div','providers');
@@ -227,9 +299,11 @@
     }
     function render() {
       const query=search.value.trim().toLocaleLowerCase();
-      const visible=groups.filter(group => (selected==='全部' || group.type===selected) &&
-        [group.title,group.type,group.summary,...group.tags,...group.entries.map(item => providerName(item.url))]
-          .join(' ').toLocaleLowerCase().includes(query));
+      const visible=selectGroups(groups,{category:selected,tag:tagSelect.value,query,hiddenTypes:preferences.hiddenTypes,hiddenTags:preferences.hiddenTags,sort:preferences.sort});
+      const hidden=[...preferences.hiddenTypes,...preferences.hiddenTags];
+      document.getElementById('hide-summary').textContent=hidden.length ? `隐藏内容（${hidden.length} 项）` : '隐藏内容';
+      document.getElementById('filter-status').textContent=hidden.length ? `已隐藏：${hidden.join('、')}。可在“隐藏内容”中恢复。` : '';
+      empty.textContent='没有符合条件的资源。请检查关键词、分类、时间标签或隐藏内容。';
       filters.querySelectorAll('button').forEach(button => {
         const active=button.textContent===selected;
         button.classList.toggle('active',active);
@@ -239,7 +313,7 @@
       visible.slice(0,shown).forEach(group => grid.append(makeCard(group)));
       empty.style.display=visible.length ? 'none' : 'block';
       more.hidden=shown>=visible.length;
-      document.getElementById('count').textContent=`显示 ${Math.min(shown,visible.length)} / ${visible.length} 组 · 共 ${records.length} 条链接`;
+      document.getElementById('count').textContent=`显示 ${Math.min(shown,visible.length)} / ${visible.length} 组 · 当前 ${visible.reduce((sum,group)=>sum+group.entries.length,0)} 条链接`;
     }
     search.addEventListener('input',() => { shown=40; render(); });
     more.addEventListener('click',() => { shown+=40; render(); });
