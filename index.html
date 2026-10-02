@@ -33,8 +33,10 @@
     .face-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .icon { width:40px; height:40px; display:grid; place-items:center; flex:none; border-radius:9px; background:#4b4549; color:#f1a5ac; font-size:22px; }
     .category { padding:5px 9px; border-radius:5px; background:#4b4549; color:#f1a5ac; font-size:12px; }
-    .face h2 { margin:20px 0 7px; font-size:19px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-    .front .note { margin:0; color:#b8b9bd; font-size:13px; line-height:1.6; }
+    .face h2 { margin:17px 0 7px; font-size:19px; line-height:1.42; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+    .front h2.long-title { font-size:16px; line-height:1.38; }
+    .front .meta { margin:0 0 7px; color:#e4adb3; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .front .note { margin:0; color:#b8b9bd; font-size:13px; line-height:1.6; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .providers { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; padding:12px 0; }
     .provider { padding:5px 8px; border-radius:5px; background:#43505a; color:#dceaf1; font-size:11px; }
     .warning { color:#f4ba9e; font-size:12px; }
@@ -77,6 +79,17 @@
       try { return providers[new URL(url).hostname.toLowerCase()] || '其他链接'; }
       catch (_) { return '其他链接'; }
     }
+    function displayInfo(rawTitle) {
+      const parts=rawTitle.split(/\s*\|\s*/);
+      let main=parts[0].trim().replace(/^\d{1,2}[.、]\s*/, '').replace(/^《/, '');
+      const closing=main.indexOf('》');
+      if (closing>=0) main=main.slice(0,closing);
+      else main=main.replace(/\s*[（(](?:19|20)\d{2}[）)](?=\s|$).*/, '').replace(/\s*【[^】]*】.*/, '');
+      main=main.trim() || rawTitle;
+      const year=(rawTitle.match(/[（(]((?:19|20)\d{2})[）)]/) || [])[1];
+      const region=(rawTitle.match(/【([^】]+)】/) || [])[1];
+      return { title:main, meta:[year,region && region.replace(/\//g, ' / ')].filter(Boolean).join(' · '), teaser:parts[1] || '' };
+    }
     function groupRecords(source) {
       const groups = new Map();
       source.forEach(item => {
@@ -111,6 +124,7 @@
       return node;
     }
     function makeCard(group) {
+      const info=displayInfo(group.title);
       const card=el('article','flip-card');
       const inner=el('div','flip-inner');
       const front=el('div','face front');
@@ -119,15 +133,16 @@
       const head=el('div','face-head');
       head.append(el('div','icon',icons[group.type] || icons.其他),el('span','category',group.type));
       front.append(head);
-      const title=el('h2','',group.title); title.title=group.title; front.append(title);
-      front.append(el('p','note',group.summary || `共 ${group.entries.length} 个分享入口`));
+      const title=el('h2',info.title.length>24 ? 'long-title' : '',info.title); title.title=group.title; front.append(title);
+      if (info.meta) front.append(el('p','meta',info.meta));
+      front.append(el('p','note',group.summary || info.teaser || `共 ${group.entries.length} 个分享入口`));
       if (group.title.startsWith('未命名资源')) front.append(el('span','warning','标题待补充'));
       const chips=el('div','providers');
       [...new Set(group.entries.map(item => providerName(item.url)).filter(Boolean))].forEach(name => chips.append(el('span','provider',name)));
       front.append(chips);
       const open=el('button','flip-btn','翻面查看网盘 →'); open.type='button';
       front.append(open);
-      const backTitle=el('h2','',group.title); backTitle.title=group.title;
+      const backTitle=el('h2','',info.title); backTitle.title=group.title;
       back.append(backTitle,el('p','help',`共 ${group.entries.length} 个入口，按网盘选择`));
       const links=el('div','links');
       const providerCounts={};
