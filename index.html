@@ -147,6 +147,10 @@
     let selected = '全部';
     let shown = 40;
     const types = ['全部',...new Set(groups.map(group => group.type))];
+    if (types.includes('其他') && types.includes('游戏')) {
+      types.splice(types.indexOf('其他'),1);
+      types.splice(types.indexOf('游戏')+1,0,'其他');
+    }
     types.forEach(type => {
       const button = document.createElement('button');
       button.type='button'; button.className='filter'; button.textContent=type;
