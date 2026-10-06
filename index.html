@@ -103,11 +103,16 @@
     .dialog-body .links { overflow:visible; }
     body:has(dialog[open]) { overflow:hidden; }
     @media(max-width:560px) { .resource-dialog { width:100%; max-width:100%; margin:auto 0 0; max-height:88dvh; border-radius:16px 16px 0 0; padding-bottom:env(safe-area-inset-bottom); } }
+    .site-share-button { margin-top:15px; }
+    .site-share-dialog { width:min(470px,calc(100% - 24px)); max-height:90dvh; overflow:auto; }
+    .site-qr { display:block; width:240px; max-width:100%; height:auto; margin:18px auto; border-radius:8px; }
+    .site-share-dialog textarea { min-height:160px; width:100%; font:inherit; line-height:1.6; }
+    .site-share-dialog p { color:var(--muted); line-height:1.6; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header><div class="eyebrow">RESOURCE CATALOG</div><h1>资源目录</h1><p>找到作品，查看完整信息与网盘入口。多个分享链接集中在一起。</p></header>
+    <header><div class="eyebrow">RESOURCE CATALOG</div><h1>资源目录</h1><p>找到作品，查看完整信息与网盘入口。多个分享链接集中在一起。</p><button id="share-site" class="filter site-share-button" type="button">分享网站 ↗</button></header>
     <main>
       <div class="toolbar"><input id="search" class="search" type="search" placeholder="搜索作品、分类或网盘" aria-label="搜索资源"><span id="count" class="count"></span></div>
       <div id="filters" class="filters" aria-label="资源分类"></div>
@@ -120,6 +125,7 @@
       <aside class="notice">标题与分组由原始笔记整理；“未命名资源”和“疑似失效”仍待核对。分享链接如有变化，请以网盘页面实际状态为准。</aside>
     </main>
   </div>
+  <dialog id="site-share-dialog" class="feedback-dialog site-share-dialog" aria-labelledby="site-share-title"><h2 id="site-share-title">分享负雪的资源分享站</h2><p>扫码打开网站，资源持续更新。</p><img id="site-qr" class="site-qr" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbwAAAG8AQAAAACNyy1yAAAC9klEQVR4nO1cbY7jIAy10fwnN5j7H2tuEE7glTFfTRtv051sJ8x7qiJKsZI8LHgYUxZ6CSm8ZkcEQwcgxwHIcQByHIAcByDHAchxAHIcgJwTyeGGRcuUtKg/JK3ZNPiWOx5HeMEmA4ZzkRPFQESyEi96VRfNBfXPocGbH/UwwnETAwx/KDlcx0z+FIqi5VSG1k2Dtz/qQYSjBhUw/FHkfNxXSVINIGlhLS8cH4a10I8OQM5/8lWqzimn3DHAcB8g5ylyVIxWjaqfzywDMqzQGmwMDyLAcB8g54lxtYrSDTgKP24AVh2AnBM1gAxVomKVpVVmL73TA+gOByDnzPjqUib6ElbNkrVoAJOv2WNbM3SHC/jquWsrqWOpzvtx5R4Q0HpTAFrzr3cMMNwHyHlKA3B1yIKo6yhJPaJKadG4a/kCVh2AnLPH1aWLUhtLdYDNn6pXu4hFd3iAr56rVylK2/1XpDKCyhfrcMp8I2LRHR7gq2fGAZJuVBW92q6pK9WCLgnQHQ5Azsn5AIsOrczcklWoQr5YRG4r0R0OQM6ZejXm+T2uXZcmlhwQ2Ayt0KtPIDzT6BFg6KGnAtZ8vzE5kHIqoHlyqbfkwBWsOgA5J5Ija92fkryMSjrplyY5ymrFslPwHXc8jvCCTQYMp9IA3JZUcbXIKuVllC2vWgB20AMXescAwynIoZLub5P7SuPsT00Y1J86oAEmcYBwab1K5qsG06sV3WPhq5M4QLicoVR3LSupIWDVDlvZ8RbsBUzpABcy5PGYqu1exTGzunoscq0ndYArnbeKxQvtjFWJr1JPW625rNi3mswBwhVzV3jw2MEnyTIDc2XeHXjbowYY7uMXkxNlDKi2+ADOXF+sH/+Oa59j5by1ShnqoDktUL/EdTh1daF3DDCcLX+VbgpSvHRVvzXtmjXA+x41wPB3k/NBd8dUrcT5WpZXdqTF6suQe6F3DDCcghzGfwVP0Y8BhvsAOQ5AjgOQ4wDkOAA5DkCOA5BD+/gD43JKL4MyjzsAAAAASUVORK5CYII=" width="444" height="444" alt="资源分享网站二维码"><textarea id="site-share-text" readonly aria-label="网站分享介绍"></textarea><div class="dialog-actions"><button id="copy-site-intro" type="button">复制介绍和网址</button><button id="copy-site-url" type="button">复制网址</button><a id="download-site-qr" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbwAAAG8AQAAAACNyy1yAAAC9klEQVR4nO1cbY7jIAy10fwnN5j7H2tuEE7glTFfTRtv051sJ8x7qiJKsZI8LHgYUxZ6CSm8ZkcEQwcgxwHIcQByHIAcByDHAchxAHIcgJwTyeGGRcuUtKg/JK3ZNPiWOx5HeMEmA4ZzkRPFQESyEi96VRfNBfXPocGbH/UwwnETAwx/KDlcx0z+FIqi5VSG1k2Dtz/qQYSjBhUw/FHkfNxXSVINIGlhLS8cH4a10I8OQM5/8lWqzimn3DHAcB8g5ylyVIxWjaqfzywDMqzQGmwMDyLAcB8g54lxtYrSDTgKP24AVh2AnBM1gAxVomKVpVVmL73TA+gOByDnzPjqUib6ElbNkrVoAJOv2WNbM3SHC/jquWsrqWOpzvtx5R4Q0HpTAFrzr3cMMNwHyHlKA3B1yIKo6yhJPaJKadG4a/kCVh2AnLPH1aWLUhtLdYDNn6pXu4hFd3iAr56rVylK2/1XpDKCyhfrcMp8I2LRHR7gq2fGAZJuVBW92q6pK9WCLgnQHQ5Azsn5AIsOrczcklWoQr5YRG4r0R0OQM6ZejXm+T2uXZcmlhwQ2Ayt0KtPIDzT6BFg6KGnAtZ8vzE5kHIqoHlyqbfkwBWsOgA5J5Ija92fkryMSjrplyY5ymrFslPwHXc8jvCCTQYMp9IA3JZUcbXIKuVllC2vWgB20AMXescAwynIoZLub5P7SuPsT00Y1J86oAEmcYBwab1K5qsG06sV3WPhq5M4QLicoVR3LSupIWDVDlvZ8RbsBUzpABcy5PGYqu1exTGzunoscq0ndYArnbeKxQvtjFWJr1JPW625rNi3mswBwhVzV3jw2MEnyTIDc2XeHXjbowYY7uMXkxNlDKi2+ADOXF+sH/+Oa59j5by1ShnqoDktUL/EdTh1daF3DDCcLX+VbgpSvHRVvzXtmjXA+x41wPB3k/NBd8dUrcT5WpZXdqTF6suQe6F3DDCcghzGfwVP0Y8BhvsAOQ5AjgOQ4wDkOAA5DkCOA5BD+/gD43JKL4MyjzsAAAAASUVORK5CYII=" download="负雪资源分享站-二维码.png">下载二维码</a><button id="close-site-share" class="secondary" type="button">关闭</button></div><p>手机可长按上方二维码保存图片，再发到 QQ 或微信。</p><p id="site-share-status" role="status" aria-live="polite"></p></dialog>
   <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title"><h2 id="feedback-title">反馈失效链接</h2><p>复制下面的信息后加入 QQ 群发送，管理员才能看到反馈。</p><textarea id="feedback-text" readonly aria-label="反馈内容"></textarea><div class="dialog-actions"><button id="copy-feedback" type="button">复制反馈内容</button><a href="https://qm.qq.com/q/DGrDnHsOu4" target="_blank" rel="noopener noreferrer">打开 QQ 群</a><button id="close-feedback" class="secondary" type="button">关闭</button></div><p id="copy-status" role="status" aria-live="polite"></p></dialog>
   <dialog id="resource-dialog" class="resource-dialog" aria-labelledby="resource-title"><div class="dialog-header"><strong>作品与资源入口</strong><button id="close-resource" type="button" aria-label="关闭资源详情">关闭 ×</button></div><div class="dialog-body"><h2 id="resource-title"></h2><p id="resource-meta"></p><p id="resource-description"></p><p id="resource-help"></p><div id="resource-links" class="links"></div></div></dialog>
   <script>
@@ -228,6 +234,25 @@
       try { await navigator.clipboard.writeText(value); return true; }
       catch (_) { return false; }
     }
+    const siteShareUrl='https://heibeixue.me/acg-resource-list/';
+    const siteShareIntro='负雪的资源分享站\n动漫、漫画、小说、影视、游戏及其他资源，支持搜索、分类筛选和查看多个网盘入口。\n\n'+siteShareUrl+'\n\n资源持续更新。链接失效或想求资源，可加入反馈群：1078525753。';
+    const siteShareDialog=document.getElementById('site-share-dialog');
+    const siteShareText=document.getElementById('site-share-text');
+    const siteShareStatus=document.getElementById('site-share-status');
+    siteShareText.value=siteShareIntro;
+    document.getElementById('share-site').addEventListener('click',()=>{siteShareStatus.textContent='';siteShareDialog.showModal();});
+    document.getElementById('close-site-share').addEventListener('click',()=>siteShareDialog.close());
+    document.getElementById('copy-site-intro').addEventListener('click',async()=>{
+      const ok=await copyText(siteShareIntro);
+      if(!ok)siteShareText.select();
+      siteShareStatus.textContent=ok?'已复制，可粘贴到 QQ 或微信分享。':'请长按或选中上方介绍文字，手动复制。';
+    });
+    document.getElementById('copy-site-url').addEventListener('click',async()=>{
+      const ok=await copyText(siteShareUrl);
+      if(!ok){siteShareText.value=siteShareUrl;siteShareText.select();}
+      siteShareStatus.textContent=ok?'网址已复制。':'已显示网址，请手动复制。';
+    });
+    siteShareDialog.addEventListener('close',()=>{siteShareText.value=siteShareIntro;});
     document.getElementById('copy-group').addEventListener('click',async event => {
       const ok=await copyText('1078525753');
       event.currentTarget.textContent=ok ? '已复制群号' : '复制失败，请手动记下：1078525753';
