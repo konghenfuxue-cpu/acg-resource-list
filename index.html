@@ -144,12 +144,12 @@
     }
     function groupRecords(source) {
       const groups = new Map();
-      source.forEach(item => {
+      source.forEach((item,sourceOrder) => {
         const normalizedType=categoryList(item.type).sort().join('|');
         const key = item.title.startsWith('未命名资源') ? item.id : normalizedType + '\u0000' + item.title.trim().toLocaleLowerCase();
         if (!groups.has(key)) groups.set(key, { title:item.title, type:item.type, summary:item.summary, entries:[], tags:[] });
         const group = groups.get(key);
-        group.entries.push(item);
+        group.entries.push({...item,sourceOrder});
         if (!group.summary && item.summary) group.summary = item.summary;
         item.tags.forEach(tag => { if (!group.tags.includes(tag)) group.tags.push(tag); });
       });
@@ -160,6 +160,10 @@
     function categoryList(type) { return [...new Set(type.split('|').map(part=>part.trim()).filter(Boolean))]; }
     function latestDate(group) {
       return group.entries.reduce((latest,item) => /^\d{4}-\d{2}-\d{2}$/.test(item.updated_at || '') && item.updated_at>latest ? item.updated_at : latest,'');
+    }
+    function latestOrder(group) {
+      const date=latestDate(group);
+      return group.entries.reduce((order,item)=> (item.updated_at || '')===date ? Math.max(order,item.sourceOrder || 0) : order,0);
     }
     function parsePreferences(raw) {
       let value;
@@ -174,7 +178,7 @@
         [group.title,group.type,group.summary,...group.tags,...group.entries.map(item=>{
           try { return ({'pan.quark.cn':'夸克网盘','pan.baidu.com':'百度网盘','pan.xunlei.com':'迅雷网盘'})[new URL(item.url).hostname] || '其他链接'; } catch (_) { return ''; }
         })].join(' ').toLocaleLowerCase().includes(query))
-        .sort((a,b)=>(state.sort==='latest' ? latestDate(b).localeCompare(latestDate(a)) : 0) || a.title.localeCompare(b.title,'zh-CN'));
+        .sort((a,b)=>(state.sort==='latest' ? (latestDate(b).localeCompare(latestDate(a)) || latestOrder(b)-latestOrder(a)) : 0) || a.title.localeCompare(b.title,'zh-CN'));
     }
     // FILTER_LOGIC_END
     const preferenceKey='resource-catalog-preferences-v1';
