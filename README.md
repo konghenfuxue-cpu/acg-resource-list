@@ -1,19 +1,54 @@
-# ACG 资源目录
+<h1 align="center">ACG 资源目录</h1>
 
-一个以卡片展示资源条目的静态网页目录，支持关键词搜索、分类筛选、时间标签和隐藏偏好。适合集中浏览、查找与分享目录中已有的资源入口。
+<p align="center">用卡片集中浏览已有条目，按关键词和分类找到入口。</p>
 
-**下载本仓库后，在浏览器中打开 [index.html](index.html) 即可查看。** 页面样式、数据和交互集中在这个 HTML 文件中，无需安装 Node.js、执行构建或配置数据库。
+<p align="center">
+  <a href="https://github.com/konghenfuxue-cpu/acg-resource-list/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-HTML_ZIP-ec8b99?style=for-the-badge&logo=github&logoColor=white" alt="下载完整网页 ZIP"></a>
+  <a href="#浏览目录"><img src="https://img.shields.io/badge/Start-3_Steps-334155?style=for-the-badge" alt="查看三步打开方法"></a>
+</p>
+
+**[下载网页 ZIP](https://github.com/konghenfuxue-cpu/acg-resource-list/archive/refs/heads/main.zip) · [三步打开](#浏览目录) · [反馈问题](https://github.com/konghenfuxue-cpu/acg-resource-list/issues)**
+
+解压后用浏览器打开 `index.html` 就能浏览。样式、数据和交互都在这个文件里，无需 Node.js、Python、构建或数据库。
+
+## 实际效果
+
+![公开目录页面：搜索、分类、排序与资源卡片](docs/images/catalog-preview.png)
+
+截图来自仓库页面在 Chrome 中的实际运行，不含浏览器地址栏或私人文件。条目数量与更新时间会随维护变化；截图不证明第三方链接始终有效。
+
+## 浏览目录
+
+| 步骤 | 操作 | 应该看到 |
+| --- | --- | --- |
+| 1 · 下载 | 点击上方 ZIP，或仓库绿色“Code → Download ZIP” | `acg-resource-list-main.zip`，不是 EXE 安装器 |
+| 2 · 解压 | 等下载完成，右键“全部解压缩”；打开 `acg-resource-list-main` | `index.html` 与 `README.md` |
+| 3 · 打开 | 双击 `index.html`，或右键选择 Chrome、Edge、Firefox | 资源目录、搜索框、分类和作品卡；点“查看资源”打开详情 |
+
+本轮实测为 Windows 11 + Chrome。macOS 可双击 ZIP 解压后用现代浏览器打开，其他系统和浏览器未在本轮验收。
 
 ## 可以做什么
 
-- 按作品、分类或网盘关键词搜索，支持简繁体搜索。
-- 按分类和时间标签筛选，按最新更新或名称排序。
-- 隐藏不想显示的分类或标签，并恢复全部内容。
-- 从卡片打开资源详情弹窗，查看链接与说明。
-- 使用页面提供的反馈和分享入口。
-- 在手机与桌面浏览器中使用自适应布局。
+| 查找 | 浏览 | 按自己的习惯显示 |
+| --- | --- | --- |
+| 标题、分类和网盘关键词搜索，支持简繁体 | 分类、时间筛选，按更新或名称排序；卡片详情集中列出链接与说明 | 隐藏分类或标签，并恢复显示；手机与桌面自适应布局 |
 
-隐藏偏好保存在当前浏览器的本地存储中，不会自动跨设备同步。浏览器限制存储或清理站点数据可能影响偏好保留。
+基础目录可离线浏览。资源本身在第三方站点，打开链接仍需要网络，并受对应服务的登录、提取码与访问条件限制。
+
+## 常见问题
+
+**点开怎么是代码？** GitHub 上的 `index.html` 页面是在看源码。先下载并解压，再用浏览器打开本地 HTML；如果默认打开记事本，用“打开方式”换成浏览器。
+
+**为什么卡片变少或搜不到？** 清空搜索，选全部分类、全部时间，并检查“隐藏内容”设置。
+
+**页面会自动更新吗？** 本地文件是下载时的快照。重新下载 ZIP、解压到新目录并打开新版；保留旧文件即可回到旧快照。
+
+**隐藏偏好保存在哪里？** 只保存在当前浏览器。本地文件存储支持由浏览器决定，换浏览器、目录或清理数据后不保证保留，不能当作收藏备份。
+
+**网盘失效怎么办？** 记录条目名称和具体问题，通过页面反馈或仓库 Issue 提交。目录能打开不等于资源链接仍可访问。
+
+<details>
+<summary>完整使用、维护与恢复说明</summary>
 
 ## 使用与维护
 
@@ -64,3 +99,9 @@
 目录收录不代表对第三方内容、版权状态或安全性的保证。作品和第三方服务的权利归各自权利人；公开分享时应确认相应授权。
 
 当前仓库未附独立的开源许可证；公开可见不等于已获得任意复制、修改和再分发授权。
+
+</details>
+
+## 来源、反馈与使用范围
+
+目录页面与交互代码位于 [index.html](index.html)，问题可通过 [Issue](https://github.com/konghenfuxue-cpu/acg-resource-list/issues)反馈。仓库目前未单独声明开源许可证；第三方资源及品牌归各自权利人，收录链接不代表取得再分发授权，也不保证长期有效。
